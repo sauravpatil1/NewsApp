@@ -3,12 +3,16 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Constants from './common/Constants';
 import NewsListScreen from './screens/newslist/container/NewsListScreen';
 import {navigationRef} from './navigationUtils';
+import NewsDetailScreen from './screens/newsdetail/container/NewsDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
 const routeConfig = {
   [Constants.screens.newsListScreen]: {
     screen: NewsListScreen,
+  },
+  [Constants.screens.newsDetailScreen]: {
+    screen: NewsDetailScreen,
   },
 };
 
