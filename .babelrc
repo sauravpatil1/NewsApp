@@ -1,0 +1,8 @@
+{
+  "env": {
+    "production": {
+      "plugins": ["transform-remove-console"]
+    }
+  },
+  "presets": ["module:@react-native/babel-preset"]
+}
