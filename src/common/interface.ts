@@ -4,6 +4,7 @@ interface INewsSource {
 }
 
 export interface INewsArticle {
+  id: string;
   source: INewsSource;
   author: string;
   title: string;
