@@ -1,7 +1,8 @@
 import {tableSchema} from '@nozbe/watermelondb';
+import {schemaNames} from '../strings';
 
 const NewsArticleSchema = tableSchema({
-  name: 'news_articles',
+  name: schemaNames.NEWS_ARTICLES,
   columns: [
     {name: 'source_id', type: 'string', isOptional: true},
     {name: 'source_name', type: 'string'},
