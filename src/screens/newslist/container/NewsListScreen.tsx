@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, FlatList, StyleSheet} from 'react-native';
 import withObservables from '@nozbe/with-observables';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
@@ -8,74 +8,67 @@ import Colors from '../../../common/Colors';
 import database from '../../../db/database';
 import Constants from '../../../common/Constants';
 import HeadlineCard from '../components/HeadlineCard';
-import ApiURL from '../../../ApiUrls';
 import RightActionCard from '../components/RightActionCard';
 import {INewsArticle} from '../../../common/interface';
-import {Q} from '@nozbe/watermelondb';
 import DBNewsArticleHelper from '../../../db/utils/newsArticleHelper';
+import useHeadlineFetch from '../hooks/useHeadlineFetch';
 
-interface IProps {
-  headlines: INewsArticle[];
-}
+const HeadlinesList = () => {
+  const [headlines, setHeadlines] = useState<INewsArticle[]>([]);
+  const [shouldResetTimer, setShouldResetTimer] = useState<boolean>(false);
+  const timerRef = useRef<NodeJS.Timeout>();
+  const fetchNewHeadlineFromApi = useHeadlineFetch();
+  const pinnedHeadlineRef = useRef<INewsArticle[]>([]);
 
-const HeadlinesList = ({headlines}: IProps) => {
-  const [pinnedHeadlines, setPinnedHeadlines] = useState([]);
+  const fetchBatchAndSetHeadlines = async (count: number) => {
+    const fetchArticle = await DBNewsArticleHelper.fetchAndDeleteRandomArticles(
+      count,
+    );
+    console.log('[Finder] : ', fetchArticle.length);
+    if (fetchArticle.length === 0) {
+      // fetchNewHeadlineFromApi();
+      return;
+    }
+    setHeadlines(prev => [
+      ...pinnedHeadlineRef.current,
+      ...fetchArticle,
+      ...prev,
+    ]);
+  };
+
+  const deleteFromList = (id: string) => {
+    setHeadlines(prev => prev.filter(currItem => currItem.id !== id));
+  };
+
+  const pinHeadline = (item: INewsArticle) => {
+    pinnedHeadlineRef.current.push(item);
+  };
 
   useEffect(() => {
-    fetchHeadlines();
-    const interval = setInterval(fetchNewBatch, 10000);
-    return () => clearInterval(interval);
+    fetchBatchAndSetHeadlines(10);
   }, []);
 
-  const fetchHeadlines = async () => {
-    try {
-      const response = await fetch(ApiURL.getTopHeadlineUrl('country=us'));
-      const result = await response.json();
-      await DBNewsArticleHelper.addNewsArticleList(result?.articles);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  useEffect(() => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      fetchBatchAndSetHeadlines(5);
+    }, 10000);
+    return () => {
+      clearInterval(timerRef.current);
+    };
+  }, [shouldResetTimer]);
 
-  const fetchNewBatch = async () => {
-    try {
-      const newHeadlines = await database.collections
-        .get(schemaNames.NEWS_ARTICLES)
-        .query(Q.take(5))
-        .fetch();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handlePin = (headline: INewsArticle) => {
-    database.write(async () => {
-      const headlineToPin = await database
-        .get(schemaNames.NEWS_ARTICLES)
-        .find(headline.id);
-      await headlineToPin.destroyPermanently();
-    });
-  };
-
-  const handleDelete = (headline: INewsArticle) => {
-    database.write(async () => {
-      const headlineToDelete = await database
-        .get(schemaNames.NEWS_ARTICLES)
-        .find(headline.id);
-      await headlineToDelete.destroyPermanently();
-    });
-  };
-
-  const renderItem = ({item, index}: {item: INewsArticle; index: number}) => {
+  const renderItem = ({item}: {item: INewsArticle}) => {
     return (
       <Swipeable
         renderRightActions={() => (
           <RightActionCard
             onPinPress={() => {
-              handlePin(item);
+              pinHeadline(item);
             }}
             onDeletePress={() => {
-              handleDelete(item);
+              deleteFromList(item.id);
+              DBNewsArticleHelper.deleteArticleById(item.id);
             }}
           />
         )}
@@ -87,12 +80,17 @@ const HeadlinesList = ({headlines}: IProps) => {
 
   return (
     <View style={styles.container}>
-      <Header onRightIconPress={fetchNewBatch} />
+      <Header onRightIconPress={fetchNewHeadlineFromApi} />
       <View style={styles.divider} />
       <FlatList
         data={headlines}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => {
+          fetchBatchAndSetHeadlines(5);
+          setShouldResetTimer(prev => !prev);
+        }}
+        keyExtractor={item => item.id}
       />
     </View>
   );

@@ -13,6 +13,7 @@ const NewsArticleSchema = tableSchema({
     {name: 'url_to_image', type: 'string', isOptional: true},
     {name: 'published_at', type: 'string'},
     {name: 'content', type: 'string', isOptional: true},
+    {name: 'is_pinned', type: 'boolean', isOptional: true},
   ],
 });
 
