@@ -13,4 +13,5 @@ export interface INewsArticle {
   urlToImage: string;
   publishedAt: string;
   content: string;
+  isPinned: boolean;
 }
