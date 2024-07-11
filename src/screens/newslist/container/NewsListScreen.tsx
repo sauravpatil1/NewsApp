@@ -26,8 +26,9 @@ const HeadlinesList = () => {
     useHeadlineFetch();
 
   const setUniqueHeadlines = (newHeadline: INewsArticle[] = []) => {
-    const result = [...pinnedHeadlines, ...newHeadline, ...headlines];
-    setHeadlines(removeDuplicates(result));
+    setHeadlines(prev =>
+      removeDuplicates([...pinnedHeadlines, ...newHeadline, ...prev]),
+    );
   };
 
   const fetchBatchOfHeadlineFromDB = async (count: number) => {
@@ -37,15 +38,16 @@ const HeadlinesList = () => {
     );
     if (headlines.length === 0) {
       fetchNewHeadlineFromApi();
+      currPageIndexRef.current = 0;
     } else {
-      setUniqueHeadlines(headlines);
       if (count == 10) {
+        setHeadlines(headlines);
         currPageIndexRef.current += 2;
       } else {
         currPageIndexRef.current++;
+        setUniqueHeadlines(headlines);
       }
     }
-    setHeadlines(headlines);
   };
 
   const deleteFromList = async (id: string) => {

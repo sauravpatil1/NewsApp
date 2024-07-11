@@ -89,11 +89,11 @@ const DBNewsArticleHelper = {
   async fetchPaginatedHeadlines(page: number, limit: number) {
     try {
       const offset = (page - 1) * limit;
-      const posts = await database.collections
+      const headlines = await database.collections
         .get(schemaNames.NEWS_ARTICLES)
         .query(Q.sortBy('published_at', Q.desc), Q.take(limit), Q.skip(offset))
         .fetch();
-      return posts;
+      return headlines;
     } catch (error) {
       return [];
     }
