@@ -98,19 +98,34 @@ const DBNewsArticleHelper = {
       return [];
     }
   },
-  async setPinnedHeadline(item: INewsArticle, pinned: boolean) {
+  async setPinnedHeadline(item: INewsArticle) {
     try {
       await database.write(async () => {
         const post = await database
           .get(schemaNames.NEWS_ARTICLES)
           .find(item.id);
         await post.update(article => {
-          article.isPinned = pinned;
+          article.isPinned = !item.isPinned;
         });
       });
       return true;
     } catch (err) {
       return false;
+    }
+  },
+  async getPinnedHeadlines() {
+    try {
+      const articlesCollection = database.collections.get(
+        schemaNames.NEWS_ARTICLES,
+      );
+      const pinnedArticles = await articlesCollection
+        .query(Q.where('is_pinned', true))
+        .fetch();
+
+      return pinnedArticles;
+    } catch (error) {
+      console.error('Error fetching pinned articles:', error);
+      return [];
     }
   },
 };

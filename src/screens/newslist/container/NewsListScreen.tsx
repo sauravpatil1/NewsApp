@@ -12,21 +12,25 @@ import useHeadlineFetch from '../hooks/useHeadlineFetch';
 import Loader from '../../../common/components/Loader';
 
 function removeDuplicates(articles: INewsArticle[]): INewsArticle[] {
-  const uniqueArticlesMap = new Map<string, INewsArticle>();
-  articles.forEach(article => {
-    uniqueArticlesMap.set(article.id, article);
-  });
-  return Array.from(uniqueArticlesMap.values());
+  const result: INewsArticle[] = [];
+  const set = new Set<string>();
+  for (let i = 0; i < articles.length; i++) {
+    if (!set.has(articles[i].id)) {
+      result.push(articles[i]);
+      set.add(articles[i].id);
+    }
+  }
+  return result;
 }
 
 const HeadlinesList = () => {
   const [headlines, setHeadlines] = useState<INewsArticle[]>([]);
-  const [pinnedHeadlines, setPinnedHeadlines] = useState<INewsArticle[]>([]);
   const currPageIndexRef = useRef<number>(0);
   const {fetchNewHeadline: fetchNewHeadlineFromApi, isDBUpdated} =
-    useHeadlineFetch(setHeadlines);
+    useHeadlineFetch();
 
-  const setUniqueHeadlines = (newHeadline: INewsArticle[] = []) => {
+  const setUniqueHeadlines = async (newHeadline: INewsArticle[] = []) => {
+    const pinnedHeadlines = await DBNewsArticleHelper.getPinnedHeadlines();
     setHeadlines(prev =>
       removeDuplicates([...pinnedHeadlines, ...newHeadline, ...prev]),
     );
@@ -53,29 +57,13 @@ const HeadlinesList = () => {
 
   const deleteFromList = async (id: string) => {
     setHeadlines(prev => prev.filter(currItem => currItem.id !== id));
-    setPinnedHeadlines(prev => prev.filter(currItem => currItem.id !== id));
     await DBNewsArticleHelper.deleteArticleById(id);
   };
 
   const pinHeadline = async (item: INewsArticle) => {
-    const filteredList = pinnedHeadlines.filter(
-      currHeadline => item.id === currHeadline.id,
-    );
-    let pinned = false;
-    if (filteredList.length > 0) {
-      setPinnedHeadlines(prev =>
-        prev.filter(currHeadline => item.id !== currHeadline.id),
-      );
-    } else {
-      setPinnedHeadlines(prev => [item, ...prev]);
-      pinned = true;
-    }
-    await DBNewsArticleHelper.setPinnedHeadline(item, pinned);
+    await DBNewsArticleHelper.setPinnedHeadline(item);
+    await setUniqueHeadlines();
   };
-
-  useEffect(() => {
-    setUniqueHeadlines();
-  }, [pinnedHeadlines]);
 
   useEffect(() => {
     fetchBatchOfHeadlineFromDB(10);
