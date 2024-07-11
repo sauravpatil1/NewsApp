@@ -5,6 +5,7 @@ import {schemaNames} from '../strings';
 
 const DBNewsArticleHelper = {
   async addNewsArticleList(articleList: INewsArticle[]) {
+    if (!articleList || articleList.length > 0) return true;
     await this.deleteNewsArticleList();
     try {
       await database.write(async () => {
@@ -72,32 +73,45 @@ const DBNewsArticleHelper = {
       return [];
     }
   },
-  async fetchAndDeleteRandomArticles(
-    count: number = 5,
-  ): Promise<INewsArticle[]> {
+  async deleteArticleById(id: string) {
     try {
-      const articles = await database
+      const article = await database.collections
         .get(schemaNames.NEWS_ARTICLES)
-        .query(Q.take(count))
-        .fetch();
+        .find(id);
       await database.write(async () => {
-        for (const article of articles) {
-          await article.destroyPermanently();
-        }
+        await article.destroyPermanently();
       });
-      return articles;
+      return true;
     } catch (error) {
-      console.error('Error fetching or deleting articles:', error);
+      return false;
+    }
+  },
+  async fetchPaginatedHeadlines(page: number, limit: number) {
+    try {
+      const offset = (page - 1) * limit;
+      const posts = await database.collections
+        .get(schemaNames.NEWS_ARTICLES)
+        .query(Q.sortBy('published_at', Q.desc), Q.take(limit), Q.skip(offset))
+        .fetch();
+      return posts;
+    } catch (error) {
       return [];
     }
   },
-  async deleteArticleById(id: string) {
-    const article = await database.collections
-      .get(schemaNames.NEWS_ARTICLES)
-      .find(id);
-    await database.write(async () => {
-      await article.destroyPermanently();
-    });
+  async setPinnedHeadline(item: INewsArticle, pinned: boolean) {
+    try {
+      await database.write(async () => {
+        const post = await database
+          .get(schemaNames.NEWS_ARTICLES)
+          .find(item.id);
+        await post.update(article => {
+          article.isPinned = pinned;
+        });
+      });
+      return true;
+    } catch (err) {
+      return false;
+    }
   },
 };
 
