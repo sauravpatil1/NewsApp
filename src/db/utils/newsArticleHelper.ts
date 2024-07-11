@@ -73,7 +73,7 @@ const DBNewsArticleHelper = {
       return [];
     }
   },
-  async deleteArticleById(id: string) {
+  async deleteArticleById(id: string): Promise<boolean> {
     try {
       const article = await database.collections
         .get(schemaNames.NEWS_ARTICLES)
@@ -83,6 +83,7 @@ const DBNewsArticleHelper = {
       });
       return true;
     } catch (error) {
+      console.error('Error deleting article:', error);
       return false;
     }
   },
