@@ -5,7 +5,7 @@ import {schemaNames} from '../strings';
 
 const DBNewsArticleHelper = {
   async addNewsArticleList(articleList: INewsArticle[]) {
-    if (!articleList || articleList.length > 0) return true;
+    if (!articleList || articleList.length < 0) return true;
     await this.deleteNewsArticleList();
     try {
       await database.write(async () => {

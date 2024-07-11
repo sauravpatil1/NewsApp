@@ -2,12 +2,14 @@ import {useEffect, useRef, useState} from 'react';
 import NetworkManager from '../../../NetworkManager';
 import ApiURL from '../../../ApiUrls';
 import DBNewsArticleHelper from '../../../db/utils/newsArticleHelper';
+import {INewsArticle} from '../../../common/interface';
 
-function useHeadlineFetch() {
+function useHeadlineFetch(setHeadline: (headlines: INewsArticle[]) => void) {
   const [reload, setReload] = useState(false);
   const shouldFetchData = useRef<boolean>(true);
   const [isDBUpdated, setIsDBUpdated] = useState<boolean>(false);
   const fetchAndStoreHeadline = async () => {
+    setHeadline([]);
     shouldFetchData.current = false;
     const result = await NetworkManager.makeGetRequest(
       ApiURL.getTopHeadlineUrl('country=us&pageSize=100'),

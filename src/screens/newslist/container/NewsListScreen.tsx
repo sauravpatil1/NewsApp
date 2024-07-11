@@ -9,6 +9,7 @@ import RightActionCard from '../components/RightActionCard';
 import {INewsArticle} from '../../../common/interface';
 import DBNewsArticleHelper from '../../../db/utils/newsArticleHelper';
 import useHeadlineFetch from '../hooks/useHeadlineFetch';
+import Loader from '../../../common/components/Loader';
 
 function removeDuplicates(articles: INewsArticle[]): INewsArticle[] {
   const uniqueArticlesMap = new Map<string, INewsArticle>();
@@ -23,7 +24,7 @@ const HeadlinesList = () => {
   const [pinnedHeadlines, setPinnedHeadlines] = useState<INewsArticle[]>([]);
   const currPageIndexRef = useRef<number>(0);
   const {fetchNewHeadline: fetchNewHeadlineFromApi, isDBUpdated} =
-    useHeadlineFetch();
+    useHeadlineFetch(setHeadlines);
 
   const setUniqueHeadlines = (newHeadline: INewsArticle[] = []) => {
     setHeadlines(prev =>
@@ -41,7 +42,7 @@ const HeadlinesList = () => {
       currPageIndexRef.current = 0;
     } else {
       if (count == 10) {
-        setHeadlines(headlines);
+        setUniqueHeadlines(headlines);
         currPageIndexRef.current += 2;
       } else {
         currPageIndexRef.current++;
@@ -108,6 +109,8 @@ const HeadlinesList = () => {
       </Swipeable>
     );
   };
+
+  if (headlines.length == 0) return <Loader />;
 
   return (
     <View style={styles.container}>

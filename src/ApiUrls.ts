@@ -1,4 +1,4 @@
-const API_KEY = 'd132df112b81431a94462c56dfb36fa9';
+const API_KEY = '885974aae1b9493fbcbd6b168ea8609d';
 const BASE_URL = 'https://newsapi.org/';
 
 const ApiURL = {
